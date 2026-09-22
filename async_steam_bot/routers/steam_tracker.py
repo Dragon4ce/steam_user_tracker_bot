@@ -94,13 +94,13 @@ async def add_track_type_selector(callback: CallbackQuery, state: FSMContext):
     await database.add_to_user_stats_trackers_count(user_id=callback.from_user.id)
     nickname = await Validator().escape_markdown(await database.get_tracker_username_from_db(steam_id=steam_id))
     answer_avatar = steam_user.avatar
-    answer = f"{hide_link(answer_avatar)}✅ Трекер **{track_type}** для профиля [{nickname}](https://steamcommunity.com/profiles/{steam_id}) добавлен\\!"
+    answer = f"{hide_link(answer_avatar)}✅ Трекер <b>{track_type}</b> для профиля <a href='https://steamcommunity.com/profiles/{steam_id}'>{nickname}</a> добавлен\\!"
     if steam_user.privacy_state != 3:
-        answer += '\n\n*Обратите внимание, что данный профиль не является публичным\\. Изменения скрытых параметров профиля невозможно отследить с помощью трекера\\!*'
+        answer += '\n\n<b>Обратите внимание, что данный профиль не является публичным. Изменения скрытых параметров профиля невозможно отследить с помощью трекера!</b>'
     await callback.message.edit_text(text = answer,
                                   reply_markup=keyboard,
-                                  disable_web_page_preview=True,
-                                  parse_mode='MarkdownV2')
+                                  disable_web_page_preview=False,
+                                  parse_mode='HTML')
     await state.clear()
     await callback.answer()
 
