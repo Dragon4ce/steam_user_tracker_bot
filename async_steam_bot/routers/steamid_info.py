@@ -8,7 +8,6 @@ from async_steam_bot.keyboards.to_method_selector import to_method_selector_chec
 from async_steam_bot.utils.links import LinksService
 from async_steam_bot.services.steam_api import SteamAPIService
 from async_steam_bot.utils.messages import get_steam_profile_info
-import datetime
 
 router = Router()
 

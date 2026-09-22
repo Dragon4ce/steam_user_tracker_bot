@@ -82,7 +82,7 @@ async def add_track_type_selector(callback: CallbackQuery, state: FSMContext):
     tracker = Tracker(user_id=callback.from_user.id, track_type=track_type, steam_id=steam_id)
     database = Database()
     has_duplicate = await database.check_duplicate_tracker(tracker)
-    if  has_duplicate:
+    if has_duplicate:
         message = await callback.message.answer(f'_У Вас уже есть данный трекер\\! Выберите другой трек\\-метод из списка или измените SteamID_', parse_mode='MarkdownV2')
         asyncio.create_task(delete_message_after_delay(message, 10))
         return
@@ -92,6 +92,8 @@ async def add_track_type_selector(callback: CallbackQuery, state: FSMContext):
     await database.add_to_user_stats_trackers_count(user_id=callback.from_user.id)
     nickname = await Validator().escape_markdown(await database.get_tracker_username_from_db(steam_id=steam_id))
     answer = f"✅ Трекер **{track_type}** для профиля [{nickname}](https://steamcommunity.com/profiles/{steam_id}) добавлен\\!"
+    if steam_user.communityvisibilitystate != 3:
+        answer += '\n\nОбратите внимание, что данный профиль не является публичным. Изменения скрытых параметров невозможно отследить с помощью трекера\\!'
     await callback.message.edit_text(text = answer,
                                   reply_markup=keyboard,
                                   disable_web_page_preview=True,
