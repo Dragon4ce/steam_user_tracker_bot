@@ -27,9 +27,13 @@ class SteamAPIService:
                             game=player.get('gameextrainfo'),
                             avatar=player.get('avatarfull'),
                             timecreated=player.get('timecreated', None),
-                            profile_url=player.get('profileurl', '')
+                            profile_url=player.get('profileurl', ''),
+                            privacy_state=player.get('communityvisibilitystate'),
+                            lastlogoff=player.get('lastlogoff', -1)
                         )
                         return self._user
+                    else:
+                        return None
                 except Exception as e:
                     print(f"Ошибка API. SteamAPIService.get_steam_user_info: {e}")
                     return None

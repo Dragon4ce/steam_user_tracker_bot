@@ -116,20 +116,33 @@ async def get_steam_profile_info(user_info: SteamUser) -> str:
     from async_steam_bot.utils.time_utils import Time
 
     username = await Validator.escape_markdown(user_info.username)
-    time = Time(user_info.timecreated)
-    online = user_info.get_online_status_text()
 
-    answer = (
-        f"👤 <b>Ник:</b> <b>{username}</b>\n\n"
-        f"<b>Зарегистрирован:</b> {time.pretty_time()} <i>— примерно {time.past_days_from_registration()} дней назад</i>\n\n"
-        f"📊 <b>Статус:</b> {online}\n"
-        f"🎮 <b>Активность:</b> {user_info.game or 'Не играет'}\n"
-        f"🆔 <b>SteamID 64:</b> <code>{user_info.steam_id}</code>\n\n"
-        f"🔗 <b>Ссылка:</b> <a href='{user_info.profile_url}'>профиль</a>\n"
-        f"━━━━━━━━━━━━━━━━━━━━\n"
-        f"<b>Сканирование завершено!</b> ✅"
-    )
-    return answer
+    online = user_info.get_online_status_text()
+    if user_info.privacy_state != 3:
+        private_profile_answer = (
+            f"<b>Данный профиль является приватным или частично скрытым. Доступ к основным данным может быть недоступен!</b>\n\n"
+            f"👤 <b>Ник:</b> <b>{username}</b>\n\n"
+            f"🆔 <b>SteamID 64:</b> <code>{user_info.steam_id}</code>\n\n"
+            f"🔗 <b>Ссылка:</b> <a href='{user_info.profile_url}'>профиль</a>\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n"
+        )
+        return private_profile_answer
+    else:
+        timecreated = Time(user_info.timecreated)
+        lastlogoff = Time(user_info.lastlogoff).time_since_last_logoff()
+        public_profile_answer = (
+            f"👤 <b>Ник:</b> <b>{username}</b>\n\n"
+            f"<b>Зарегистрирован:</b> {timecreated.pretty_time()} <i>— примерно {timecreated.past_days_from_registration()} дней назад</i>\n\n"
+            f"📊 <b>Статус:</b> {online}\n"
+            f"🎮 <b>Активность:</b> {user_info.game or 'Не играет'}\n"
+            f"🎮 <b>Последний раз в сети:</b> {lastlogoff}\n"
+            f"🆔 <b>SteamID 64:</b> <code>{user_info.steam_id}</code>\n\n"
+            f"🔗 <b>Ссылка:</b> <a href='{user_info.profile_url}'>профиль</a>\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n"
+            f"<b>Сканирование завершено!</b> ✅"
+        )
+        return public_profile_answer
+
 
 def get_checker_info() -> str:
     reply_message = '''🎮 **STEAM CHECKER**

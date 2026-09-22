@@ -39,13 +39,12 @@ async def steamid64_check(
     steamid_input = message.text.strip()
     steamid_valid_check = await LinksService(steamid_input).check_steamid_message()
     if steamid_valid_check:
-        steamid_info = await SteamAPIService(int(steamid_valid_check)).get_steam_user_info()
+        steam_profile_info = await SteamAPIService(int(steamid_valid_check)).get_steam_user_info()
         await state.update_data(steamid=steamid_valid_check)
-        print(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'), steamid_info)
-        answer_info = await get_steam_profile_info(steamid_info)
+        answer_info = await get_steam_profile_info(steam_profile_info)
         keyboard = to_method_selector_checker()
         await message.answer(
-            f"{hide_link(steamid_info.avatar)}"
+            f"{hide_link(steam_profile_info.avatar)}"
             f"{answer_info}", parse_mode='HTML', reply_markup=keyboard)
         await state.clear()
     else:

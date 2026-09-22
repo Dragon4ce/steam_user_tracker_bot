@@ -11,6 +11,8 @@ class SteamUser:
     avatar: Optional[str]
     timecreated: Optional[int]
     profile_url: str
+    privacy_state: int
+    lastlogoff: int
 
     ONLINE_STATUS = {
         0: "🔴 Оффлайн",

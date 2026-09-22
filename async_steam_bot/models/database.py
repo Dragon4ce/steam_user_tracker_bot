@@ -50,13 +50,15 @@ class Database:
 
         async with self.lock:
             async with aiosqlite.connect(self.db_file) as connection:
-                await connection.execute("INSERT OR IGNORE INTO TrackInfo (steamid, game, username, online, avatar, profile_url, timecreated) VALUES (?, ?, ?, ?, ?, ?, ?)", (steam_user.steam_id,
+                await connection.execute("INSERT OR IGNORE INTO TrackInfo (steamid, game, username, online, avatar, profile_url, timecreated, lastlogoff, privacy_state) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", (steam_user.steam_id,
                                                                        steam_user.game,
                                                                        steam_user.username,
                                                                         steam_user.online,
                                                                        steam_user.avatar,
                                                                        steam_user.profile_url,
-                                                                        steam_user.timecreated))
+                                                                        steam_user.timecreated,
+                                                                        steam_user.lastlogoff,
+                                                                        steam_user.privacy_state))
                 await connection.commit()
                 logging.info('DB DEBUG: add_tracker_info_to_db: обработано')
 
@@ -151,7 +153,7 @@ class Database:
 
         async with self.lock:
             async with aiosqlite.connect(self.db_file) as connection:
-                async with connection.execute("SELECT game, username, online, avatar, profile_url, timecreated FROM TrackInfo WHERE steamid = ?", (steam_id,)) as cursor:
+                async with connection.execute("SELECT game, username, online, avatar, profile_url, timecreated, lastlogoff, privacy_state FROM TrackInfo WHERE steamid = ?", (steam_id,)) as cursor:
                     info_about_tracker = await cursor.fetchone()
                     formatted_info_about_tracker = SteamUser(
                                                             steam_id=steam_id,
@@ -160,7 +162,9 @@ class Database:
                                                             online=info_about_tracker[2],
                                                             avatar=info_about_tracker[3],
                                                             profile_url=info_about_tracker[4],
-                                                            timecreated=info_about_tracker[5]
+                                                            timecreated=info_about_tracker[5],
+                                                            lastlogoff=info_about_tracker[6],
+                                                            privacy_state=info_about_tracker[7]
                                                             )
                 return formatted_info_about_tracker
 

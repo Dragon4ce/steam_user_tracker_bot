@@ -37,7 +37,7 @@ async def main():
     await notifier_bot.delete_webhook(drop_pending_updates=True)
     await asyncio.gather(
         main_dp.start_polling(main_bot),
-        notifier_dp.start_polling(notifier_bot)
+        # notifier_dp.start_polling(notifier_bot)
     )
     logging.info('Bots polling started')
 
