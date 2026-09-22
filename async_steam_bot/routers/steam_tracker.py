@@ -15,6 +15,8 @@ from async_steam_bot.utils.validators import Validator
 from async_steam_bot.business_logic.bot_logic import delete_message_after_delay
 from async_steam_bot.keyboards.add_trackers_error import add_tracking_errors_keyboard
 import asyncio
+from aiogram.utils.markdown import hide_link
+
 router = Router()
 
 @router.callback_query(F.data == 'steam_tracking')
@@ -91,9 +93,10 @@ async def add_track_type_selector(callback: CallbackQuery, state: FSMContext):
     await database.add_tracker_to_db(tracker)
     await database.add_to_user_stats_trackers_count(user_id=callback.from_user.id)
     nickname = await Validator().escape_markdown(await database.get_tracker_username_from_db(steam_id=steam_id))
-    answer = f"✅ Трекер **{track_type}** для профиля [{nickname}](https://steamcommunity.com/profiles/{steam_id}) добавлен\\!"
-    if steam_user.communityvisibilitystate != 3:
-        answer += '\n\nОбратите внимание, что данный профиль не является публичным. Изменения скрытых параметров невозможно отследить с помощью трекера\\!'
+    answer_avatar = steam_user.avatar
+    answer = f"{hide_link(answer_avatar)}✅ Трекер **{track_type}** для профиля [{nickname}](https://steamcommunity.com/profiles/{steam_id}) добавлен\\!"
+    if steam_user.privacy_state != 3:
+        answer += '\n\n*Обратите внимание, что данный профиль не является публичным\\. Изменения скрытых параметров профиля невозможно отследить с помощью трекера\\!*'
     await callback.message.edit_text(text = answer,
                                   reply_markup=keyboard,
                                   disable_web_page_preview=True,
