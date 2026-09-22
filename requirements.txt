@@ -29,3 +29,4 @@ typing-extensions
 typing-inspection
 urllib3
 yarl
+python-dotenv
