@@ -23,8 +23,8 @@ class Time:
 
     # def last_logoff_time(self):
     #     return datetime.fromtimestamp(int(self._unix_time)).strftime("%H:%M")
-
-    def time_since_last_logoff(self) -> str:
+    @staticmethod
+    def time_since_last_logoff(lastlogoff_time) -> str:
         """
         Возвращает строку вида:
         - "только что" (меньше 60 секунд)
@@ -34,9 +34,9 @@ class Time:
         - "2 месяца назад"
         - "1 год назад"
         """
-        if not self._unix_time:
+        if not lastlogoff_time:
             return "Неизвестно"
-        unix_time = int(self._unix_time)
+        unix_time = int(lastlogoff_time)
         now = datetime.now()
         last_seen = datetime.fromtimestamp(unix_time)
 

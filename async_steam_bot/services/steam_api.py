@@ -29,7 +29,7 @@ class SteamAPIService:
                             timecreated=player.get('timecreated', None),
                             profile_url=player.get('profileurl', ''),
                             privacy_state=player.get('communityvisibilitystate'),
-                            lastlogoff=player.get('lastlogoff', -1)
+                            lastlogoff=player.get('lastlogoff', None)
                         )
                         return self._user
                     else:

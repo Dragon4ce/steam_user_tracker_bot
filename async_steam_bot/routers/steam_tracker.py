@@ -1,7 +1,6 @@
 from aiogram import Router, F
 from aiogram.types import CallbackQuery, Message
-from async_steam_bot.utils.messages import get_tracking_info
-from async_steam_bot.keyboards.show_tracking_options import show_tracking_options
+from async_steam_bot.rich_messages.steam_tracking_messages import get_tracking_info
 from aiogram.fsm.context import FSMContext
 from async_steam_bot.states.tracker_states import UserTrackerState
 from async_steam_bot.keyboards.tracking_methods_selector import tracking_methods_selector
@@ -22,12 +21,10 @@ router = Router()
 @router.callback_query(F.data == 'steam_tracking')
 
 async def show_tracking_menu(callback: CallbackQuery):
-    keyboard = show_tracking_options()
     database = Database()
     user_stats = await database.get_user_stats_from_db(callback.from_user.id)
-    answer = await get_tracking_info(stats=user_stats, username=callback.from_user.username)
-    #TODO: добавить нормальный парсер для MarkdownV2
-    await callback.message.edit_text(text=answer, reply_markup=keyboard, parse_mode='MarkdownV2')
+    answer = get_tracking_info(stats=user_stats, username=callback.from_user.username)
+    await callback.message.edit_text(rich_message=answer)
     await callback.answer()
 
 @router.callback_query(F.data == 'add_tracker')
