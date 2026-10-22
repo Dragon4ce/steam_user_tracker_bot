@@ -2,6 +2,7 @@ from async_steam_bot.models.database import Database
 from async_steam_bot.services.steam_api import SteamAPIService
 from async_steam_bot.business_logic.telegram_tracker_notifier import send_notification_to_all_watchers
 import asyncio
+import logging
 
 '''Логика работы трекера (периодическое обновление данных об отслеживаемых трекерах)'''
 
@@ -9,6 +10,9 @@ async def update_single_user(steam_id: int):
     database = Database()
     old_data = await database.get_info_about_tracker(steam_id=steam_id)
     new_data = await SteamAPIService(steam_id=steam_id).get_steam_user_info()
+    if new_data is None:
+        logging.warning(f"SteamAPI вернул None для {steam_id}, пропускаем")
+        return None
     if old_data == new_data:
         return None
     await database.update_tracker_info(steam_user=new_data)
@@ -45,8 +49,11 @@ async def update_all_trackers(bot):
                                                     )
 
 async def tracking_system_cycle(bot):
-    print('Система трекинга инициализирована')
+    logging.info('Система трекинга инициализирована')
     while True:
-        await database_cleanup()
-        await update_all_trackers(bot)
+        try:
+            await database_cleanup()
+            await update_all_trackers(bot)
+        except Exception as e:
+            logging.error(f"Ошибка в цикле трекера: {e}", exc_info=True)
         await asyncio.sleep(30)
