@@ -7,12 +7,13 @@ from async_steam_bot.keyboards.tracking_methods_selector import tracking_methods
 from async_steam_bot.keyboards.to_method_selector import to_method_selector_tracker
 from async_steam_bot.utils.links import LinksService
 from async_steam_bot.models.database import Database
-from async_steam_bot.models.schemas import Tracker, TrackMethod
+from async_steam_bot.models.schemas import Tracker
 from async_steam_bot.services.steam_api import SteamAPIService
-from async_steam_bot.keyboards.delete_trackers_list import delete_trackers_list
 from async_steam_bot.utils.validators import Validator
 from async_steam_bot.business_logic.bot_logic import delete_message_after_delay
 from async_steam_bot.keyboards.add_trackers_error import add_tracking_errors_keyboard
+from async_steam_bot.rich_messages.steam_tracking_messages import format_tracker_menu
+from async_steam_bot.rich_messages.template_messages import TEMPLATE_MESSAGES
 import asyncio
 from aiogram.utils.markdown import hide_link
 
@@ -119,44 +120,14 @@ async def cancel_tracking_delete(callback: CallbackQuery, state: FSMContext):
 
 async def check_user_trackers(callback: CallbackQuery):
     database = Database()
-    answer = '*✅АКТИВНЫЕ ТРЕКЕРЫ:*\n\n' #[Tracker(user_id=680702513, steam_id=76561198895393980, track_type='online')]
-    current_user_trackers = await database.get_user_trackers_from_db(callback.from_user.id)
-    keyboard = to_method_selector_tracker(additions='my_trackers_menu')
+    current_user_trackers = await database.get_user_trackers_from_db(
+        user_id=callback.from_user.id)
     if not current_user_trackers:
-        no_trackers_text = '**У Вас нет активных трекеров\\!**'
-        await callback.message.edit_text(text = no_trackers_text,
-                                      reply_markup=keyboard,
-                                      parse_mode='MarkdownV2')
+        no_trackers_text = TEMPLATE_MESSAGES['no_trackers']
+        await callback.message.edit_text(rich_message=no_trackers_text)
         return
-    for number, tracker in enumerate(current_user_trackers, 1):
-        nickname = await Validator().escape_markdown(await database.get_tracker_username_from_db(tracker.steam_id))
-        display_name_track_type = TrackMethod.get_method_display_name(name=tracker.track_type)
-        answer += (f'{number}\\. *[{nickname}](https://steamcommunity.com/profiles/{tracker.steam_id})* — '
-                   f'*{display_name_track_type}*\n')
-    await callback.message.edit_text(text=answer,
-                                  reply_markup=keyboard,
-                                  parse_mode='MarkdownV2',
-                                  disable_web_page_preview=True)
-    #TODO: переделать сообщение (сделать более красивым и читаемым)
-    await callback.answer()
-
-@router.callback_query(F.data == 'delete_tracker')
-async def remove_user_tracker(callback: CallbackQuery):
-    database = Database()
-    keyboard = to_method_selector_tracker()
-    current_user_trackers = await database.get_user_trackers_from_db(callback.from_user.id)
-    if not current_user_trackers:
-        no_trackers_text = '**Зачем удалять то, что нельзя удалить\\? : \\)**'
-        await callback.message.edit_text(text = no_trackers_text,
-                                      reply_markup=keyboard,
-                                      parse_mode='MarkdownV2')
-        return
-    keyboard = await delete_trackers_list(user_id=callback.from_user.id)
-    answer = '**Выберите трекер для удаления ниже:**'
-    await callback.message.edit_text(text=answer,
-                                  reply_markup=keyboard,
-                                  parse_mode='MarkdownV2'
-                                  )
+    answer = await format_tracker_menu(user_trackers=current_user_trackers)
+    await callback.message.edit_text(rich_message=answer)
     await callback.answer()
 
 @router.callback_query(F.data.startswith('remove_tracker')) #remove_tracker_userid_steamid_tracktype
