@@ -31,4 +31,3 @@ urllib3
 yarl
 python-dotenv
 fastapi
-uvicorn
