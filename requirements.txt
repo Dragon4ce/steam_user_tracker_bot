@@ -30,3 +30,5 @@ typing-inspection
 urllib3
 yarl
 python-dotenv
+fastapi
+uvicorn
