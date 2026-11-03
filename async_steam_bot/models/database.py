@@ -1,7 +1,7 @@
 import asyncio
 import aiosqlite
 from async_steam_bot.config import db_path
-from async_steam_bot.models.schemas import Tracker, SteamUser, UserStats
+from async_steam_bot.models.schemas import Tracker, UserStats, SteamUser
 import logging
 
 class Database:
@@ -50,19 +50,21 @@ class Database:
 
         async with self.lock:
             async with aiosqlite.connect(self.db_file) as connection:
-                await connection.execute("INSERT OR IGNORE INTO TrackInfo (steamid, game, username, online, avatar, profile_url, timecreated, lastlogoff, privacy_state) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", (steam_user.steam_id,
-                                                                       steam_user.game,
+                await connection.execute("INSERT OR IGNORE INTO TrackInfo (steamid, game, username, online, avatar, profile_url, timecreated, lastlogoff, privacy_state) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                                         (
+                                                                       steam_user.steam_id,
+                                                                       steam_user.current_game,
                                                                        steam_user.username,
-                                                                        steam_user.online,
-                                                                       steam_user.avatar,
+                                                                        steam_user.online_status,
+                                                                       steam_user.avatar_url,
                                                                        steam_user.profile_url,
-                                                                        steam_user.timecreated,
-                                                                        steam_user.lastlogoff,
+                                                                        steam_user.time_created,
+                                                                        steam_user.last_logoff,
                                                                         steam_user.privacy_state))
                 await connection.commit()
                 logging.info('DB DEBUG: add_tracker_info_to_db: обработано')
 
-    async def check_duplicate_tracker(self, tracker) -> bool:
+    async def check_duplicate_tracker(self, tracker: Tracker) -> bool:
 
         """Мини-функция проверки на наличие дубликата трекера в Базе Данных.
         Помогает избежать повторного добавления одного и того же трекера пользователем через интерфейс бота."""
@@ -146,27 +148,21 @@ class Database:
                 await connection.commit()
                 logging.info('DB DEBUG: delete_from_user_stats_trackers_count: обработано')
 
-    async def get_info_about_tracker(self, steam_id: int) -> SteamUser:
+    async def get_info_about_tracker(self, steam_id: int) -> SteamUser | None:
 
         """Функция для получения информации о Steam-профиле из БД. Пример выходных данных:
         ('0', '✞ DragonAce ✞', 0, 'https://avatars.steamstatic.com/8df3fbb9717a9433d4c709138700c25228676cb9_full.jpg')"""
 
         async with self.lock:
             async with aiosqlite.connect(self.db_file) as connection:
-                async with connection.execute("SELECT game, username, online, avatar, profile_url, timecreated, lastlogoff, privacy_state FROM TrackInfo WHERE steamid = ?", (steam_id,)) as cursor:
-                    info_about_tracker = await cursor.fetchone()
-                    formatted_info_about_tracker = SteamUser(
-                                                            steam_id=steam_id,
-                                                            game=info_about_tracker[0],
-                                                            username=info_about_tracker[1],
-                                                            online=info_about_tracker[2],
-                                                            avatar=info_about_tracker[3],
-                                                            profile_url=info_about_tracker[4],
-                                                            timecreated=info_about_tracker[5],
-                                                            lastlogoff=info_about_tracker[6],
-                                                            privacy_state=info_about_tracker[7]
-                                                            )
-                return formatted_info_about_tracker
+                connection.row_factory = aiosqlite.Row
+                async with connection.execute(
+                        "SELECT steamid, game, username, online, avatar, profile_url, timecreated, lastlogoff, privacy_state FROM TrackInfo WHERE steamid = ?",
+                        (steam_id,)) as cursor:
+                    row = await cursor.fetchone()
+                    row_dict = dict(row)
+                    user_info = SteamUser.model_validate(row_dict, by_alias=True)
+                    return SteamUser.model_validate(user_info, by_alias=True) if user_info else None
 
     async def update_tracker_info(self, steam_user: SteamUser):
 
@@ -176,15 +172,17 @@ class Database:
             async with aiosqlite.connect(self.db_file) as connection:
                 await connection.execute(
                     """UPDATE TrackInfo 
-                       SET game = ?, username = ?, online = ?, avatar = ?, profile_url = ?, timecreated = ?
+                       SET game = ?, username = ?, online = ?, avatar = ?, profile_url = ?, timecreated = ?, lastlogoff = ?, privacy_state = ?
                        WHERE steamid = ?""",
                     (
-                        steam_user.game,
+                        steam_user.current_game,
                         steam_user.username,
-                        steam_user.online,
-                        steam_user.avatar,
+                        steam_user.online_status,
+                        steam_user.avatar_url,
                         steam_user.profile_url,
                         steam_user.timecreated,
+                        steam_user.lastlogoff,
+                        steam_user.privacy_state,
                         steam_user.steam_id
                     )
                 )
@@ -211,7 +209,7 @@ class Database:
                 await connection.execute("DELETE FROM TrackInfo WHERE steamid = ?", (steam_id,))
                 await connection.commit()
 
-    async def get_steamid_from_all_trackers(self) -> list[int]:
+    async def get_steam_id_from_all_trackers(self) -> list[int]:
 
         """Мини-функция для получения всех SteamID, присутствующих в БД на момент вызова.
          Данные берутся из таблицы с информацией о трекерах пользователей."""
@@ -219,10 +217,10 @@ class Database:
         async with self.lock:
             async with aiosqlite.connect(self.db_file) as connection:
                 async with connection.execute("SELECT steamid FROM GeneralInfo") as cursor:
-                    steamid_from_all_trackers = await cursor.fetchall()
-                    return [int(steam_id_tuple[0]) for steam_id_tuple in steamid_from_all_trackers]
+                    steam_id_from_all_trackers = await cursor.fetchall()
+                    return [int(steam_id_tuple[0]) for steam_id_tuple in steam_id_from_all_trackers]
 
-    async def get_steamid_from_all_trackers_info(self) -> list[int]:
+    async def get_steam_id_from_all_trackers_info(self) -> list[int]:
 
         """Мини-функция для получения всех SteamID, присутствующих в БД на момент вызова.
          Данные берутся из таблицы с информацией о Steam профилях трекеров."""
@@ -230,8 +228,8 @@ class Database:
         async with self.lock:
             async with aiosqlite.connect(self.db_file) as connection:
                 async with connection.execute("SELECT steamid FROM TrackInfo") as cursor:
-                    steamid_from_all_trackers = await cursor.fetchall()
-                    return [int(steam_id_tuple[0]) for steam_id_tuple in steamid_from_all_trackers]
+                    steam_id_from_all_trackers = await cursor.fetchall()
+                    return [int(steam_id_tuple[0]) for steam_id_tuple in steam_id_from_all_trackers]
 
     async def get_watchers_dict_for_notifier(self, steam_id: int) -> dict:
 
@@ -260,7 +258,6 @@ class Database:
                                                                                                                      tracker.steam_id,
                                                                                                                      tracker.track_type)) as cursor:
                     tracker_info = await cursor.fetchone()
-                    logging.info('check_deleted_tracker: ', tracker_info)
                     return True if tracker_info else False
 
     async def check_user_vip(self, user_id: int) -> bool:
