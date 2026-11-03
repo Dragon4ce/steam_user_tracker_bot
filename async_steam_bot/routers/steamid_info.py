@@ -40,7 +40,7 @@ async def steamid64_check(
         answer_info = await get_steam_profile_info(steam_profile_info)
         keyboard = to_method_selector_checker()
         await message.answer(
-            f"{hide_link(steam_profile_info.avatar)}"
+            f"{hide_link(steam_profile_info.avatar_url)}"
             f"{answer_info}", parse_mode='HTML', reply_markup=keyboard)
         await state.clear()
     else:

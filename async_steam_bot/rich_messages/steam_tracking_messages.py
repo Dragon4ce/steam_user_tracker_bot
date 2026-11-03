@@ -1,5 +1,6 @@
 from async_steam_bot.models.database import Database
-from async_steam_bot.models.schemas import UserStats, SteamUser
+from async_steam_bot.models.schemas import UserStats
+from async_steam_bot.services.steam_user_processing import SteamUserProcessing
 from aiogram.types import (
     InputRichBlockBlockQuotation,
     InputRichBlockDivider,
@@ -34,7 +35,7 @@ from aiogram.types import (
     RichTextButton, InputRichBlockPhoto, InputMediaPhoto, RichTextUrl,
 )
 from async_steam_bot.utils.time_utils import Time
-from async_steam_bot.models.schemas import Tracker, SteamUser, TrackMethod
+from async_steam_bot.models.schemas import Tracker, TrackMethod
 
 def get_tracking_info(stats: UserStats, username: str) -> InputRichMessage:
     vip_status_text = '✅ Активен' if stats.vip_status else '❌ Не активен'
@@ -144,19 +145,20 @@ def get_tracking_info(stats: UserStats, username: str) -> InputRichMessage:
 async def format_one_tracker(tracker_object: Tracker) -> InputRichBlockDetails:
     database = Database()
     tracker_info = await database.get_info_about_tracker(steam_id=tracker_object.steam_id)
+    online_status = SteamUserProcessing(steam_user=tracker_info).get_online_status_text()
     tracker_details = InputRichBlockDetails(summary = [RichTextBold(text = f'{tracker_info.username}'),
                                                        RichTextBold(text = f' — {TrackMethod.get_method_display_name(name=tracker_object.track_type)}')], blocks = [
         InputRichBlockPhoto(photo = InputMediaPhoto(
-        media=tracker_info.avatar)),
+        media=tracker_info.avatar_url)),
         InputRichBlockParagraph(text = [
             RichTextBold(text = '👤Никнейм: '),
             f'{tracker_info.username}\n',
             RichTextBold(text = '📊 Онлайн статус: '),
-            f'{tracker_info.get_online_status_text()}\n',
+            f'{online_status}\n',
             RichTextBold(text='🎮 Активность: '),
-            f'{tracker_info.game if tracker_info.game else "Не играет"}\n',
+            f'{tracker_info.current_game if tracker_info.current_game else "Не играет"}\n',
             RichTextBold(text='🕦 Последний раз в сети: '),
-            f'{Time.time_since_last_logoff(lastlogoff_time=tracker_info.lastlogoff)}\n',
+            f'{Time.time_since_last_logoff(lastlogoff_time=tracker_info.last_logoff)}\n',
             RichTextBold(text='🆔 SteamID 64: '),
             RichTextCode(text = f'{tracker_info.steam_id}\n'),
             RichTextBold(text='🔗 Ссылка на профиль: '),
