@@ -1,6 +1,6 @@
 import aiohttp
 from typing import Optional
-from async_steam_bot.models.schemas import SteamUser
+from refactoring_files.pydantic_schemas import SteamUser
 from async_steam_bot.config import STEAM_API_KEY
 
 class SteamAPIService:
@@ -8,7 +8,7 @@ class SteamAPIService:
         self._steam_id = steam_id
         self._user: Optional[SteamUser] = None
 
-    async def get_steam_user_info(self) -> Optional[SteamUser]:
+    async def get_steam_user_info(self) -> SteamUser | None:
         url = f"http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/"
         params = {
             'key': STEAM_API_KEY,
@@ -19,18 +19,8 @@ class SteamAPIService:
                 try:
                     data = await response.json()
                     if 'response' in data and 'players' in data['response']:
-                        player = data['response']['players'][0]
-                        self._user = SteamUser(
-                            steam_id=int(player.get('steamid', 0)),
-                            username=player.get('personaname', 'Unknown'),
-                            online=player.get('personastate', 0),
-                            game=player.get('gameextrainfo'),
-                            avatar=player.get('avatarfull'),
-                            timecreated=player.get('timecreated', None),
-                            profile_url=player.get('profileurl', ''),
-                            privacy_state=player.get('communityvisibilitystate'),
-                            lastlogoff=player.get('lastlogoff', None)
-                        )
+                        player_model = data['response']['players'][0]
+                        self._user = SteamUser.model_validate(player_model)
                         return self._user
                     else:
                         return None
@@ -43,16 +33,4 @@ class SteamAPIService:
         if not self._user:
             await self.get_steam_user_info()
         return self._user.username if self._user else 'Unknown'
-    @staticmethod
-    async def resolve_vanity_url(custom_id: str) -> int | None:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(
-                    f'http://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/?key={STEAM_API_KEY}&vanityurl={custom_id}') as response:
-                try:
-                    data = await response.json()
-                    if 'response' in data and 'steamid' in data['response']:
-                        return data['response']['steamid']
-                except Exception as e:
-                    print(e)
-                    return None
-                                                                                 
+
