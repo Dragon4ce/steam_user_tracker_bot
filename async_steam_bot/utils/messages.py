@@ -1,4 +1,5 @@
-from async_steam_bot.models.schemas import UserStats, SteamUser
+from async_steam_bot.models.schemas import SteamUser
+from async_steam_bot.services.steam_user_processing import SteamUserProcessing
 from aiogram.types import (
     InputRichBlockBlockQuotation,
     InputRichBlockDivider,
@@ -42,33 +43,33 @@ ONLINE_STATUS = {
         5: "🎮 Ищет игру"
     }
 
-async def get_steam_profile_info(user_info: SteamUser) -> str:
+async def get_steam_profile_info(steam_user_info: SteamUser) -> str:
     from async_steam_bot.utils.validators import Validator
     from async_steam_bot.utils.time_utils import Time
 
-    username = await Validator.escape_markdown(user_info.username)
+    username = await Validator.escape_markdown(steam_user_info.username)
 
-    online = user_info.get_online_status_text()
-    if user_info.privacy_state != 3:
+    online_status = SteamUserProcessing(steam_user=steam_user_info).get_online_status_text()
+    if steam_user_info.privacy_state != 3:
         private_profile_answer = (
             f"<b>Данный профиль является приватным или частично скрытым. Доступ к основным данным может быть недоступен!</b>\n\n"
             f"👤 <b>Ник:</b> <b>{username}</b>\n\n"
-            f"🆔 <b>SteamID 64:</b> <code>{user_info.steam_id}</code>\n\n"
-            f"🔗 <b>Ссылка:</b> <a href='{user_info.profile_url}'>профиль</a>\n"
+            f"🆔 <b>SteamID 64:</b> <code>{steam_user_info.steam_id}</code>\n\n"
+            f"🔗 <b>Ссылка:</b> <a href='{steam_user_info.profile_url}'>профиль</a>\n"
             f"━━━━━━━━━━━━━━━━━━━━\n"
         )
         return private_profile_answer
     else:
-        timecreated = Time(user_info.timecreated)
-        lastlogoff = Time.time_since_last_logoff(user_info.lastlogoff)
+        timecreated = Time(steam_user_info.time_created)
+        lastlogoff = Time.time_since_last_logoff(steam_user_info.last_logoff)
         public_profile_answer = (
             f"👤 <b>Ник:</b> <b>{username}</b>\n\n"
             f"<b>Зарегистрирован:</b> {timecreated.pretty_time()} <i>— примерно {timecreated.past_days_from_registration()} дней назад</i>\n\n"
-            f"📊 <b>Статус:</b> {online}\n"
-            f"🎮 <b>Активность:</b> {user_info.game or 'Не играет'}\n"
+            f"📊 <b>Статус:</b> {online_status}\n"
+            f"🎮 <b>Активность:</b> {steam_user_info.current_game or 'Не играет'}\n"
             f"🕦 <b>Последний раз в сети:</b> {lastlogoff}\n"
-            f"🆔 <b>SteamID 64:</b> <code>{user_info.steam_id}</code>\n\n"
-            f"🔗 <b>Ссылка:</b> <a href='{user_info.profile_url}'>профиль</a>\n"
+            f"🆔 <b>SteamID 64:</b> <code>{steam_user_info.steam_id}</code>\n\n"
+            f"🔗 <b>Ссылка:</b> <a href='{steam_user_info.profile_url}'>профиль</a>\n"
             f"━━━━━━━━━━━━━━━━━━━━\n"
             f"<b>Сканирование завершено!</b> ✅"
         )
