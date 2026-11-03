@@ -1,57 +1,28 @@
 from dataclasses import dataclass
 from typing import Optional, List, Any, Dict
 import asyncio
-@dataclass
-class SteamUser:
-    """Данные пользователя Steam"""
-    steam_id: int
-    username: str
-    online: int  # 0 - оффлайн, 1 - онлайн, 2 - занят, 3 - отошёл, 4 - сон, 5 - ищет игру
-    game: Optional[str]
-    avatar: Optional[str]
-    timecreated: Optional[int]
-    profile_url: str
-    privacy_state: int
-    lastlogoff: int
-
-    ONLINE_STATUS = {
-        0: "🔴 Оффлайн",
-        1: "🟢 Онлайн",
-        2: "🔴 Занят",
-        3: "🌙 Отошёл",
-        4: "💤 Спит",
-        5: "🎮 Ищет игру"
-    }
-    def is_online(self) -> bool:
-        return self.online != 0
+from typing import Optional
+from pydantic import BaseModel, Field, field_validator, create_model, AliasChoices
 
 
-    def get_online_status_text(self) -> str:
-        """Получить текстовый статус онлайн"""
-        return self.ONLINE_STATUS.get(self.online, "❓ Неизвестно")
+class SteamUser(BaseModel):
 
-    async def to_dict(self) -> Dict[str, Any]:
-        """Преобразует в словарь для сохранения в кэш/БД"""
-        return {
-            'online': self.online,
-            'username': self.username,
-            'game': self.game,
-            'avatar': self.avatar,
-            'profileurl': self.profile_url
-        }
+    #Неизменные постоянные параметры от SteamAPI
+    steam_id: int = Field(validation_alias='steamid', serialization_alias='steamid')
+    profile_url: str = Field(validation_alias=AliasChoices('profileurl', 'profile_url'), serialization_alias='profile_url')
+    username: str = Field(validation_alias=AliasChoices('personaname', 'username'), serialization_alias='username')
+    privacy_state: int = Field(validation_alias=AliasChoices('communityvisibilitystate', 'privacy_state'), serialization_alias='privacy_state')
+    time_created: int = Field(validation_alias='timecreated', serialization_alias='timecreated')
+    avatar_url: str = Field(validation_alias=AliasChoices('avatarfull', 'avatar'), serialization_alias='avatar')
+    online_status: int = Field(validation_alias=AliasChoices('personastate', 'online'), serialization_alias='online')
 
-    def diff(self, other: 'SteamUser') -> List[str]:
-        """Возвращает список полей, которые изменились"""
-        changed = []
-        if self.online != other.online:
-            changed.append('online')
-        if self.username != other.username:
-            changed.append('username')
-        if self.game != other.game:
-            changed.append('game')
-        if self.avatar != other.avatar:
-            changed.append('avatar')
-        return changed
+    #Опциональные параметры
+    current_game: Optional[str] = Field(validation_alias=AliasChoices('gameextrainfo', 'game'), serialization_alias='game', default=None)
+    last_logoff: Optional[int] = Field(validation_alias='lastlogoff', serialization_alias='lastlogoff', default=None)
+
+
+
+
 
 @dataclass
 class Tracker:
@@ -69,10 +40,6 @@ class Tracker:
         if self.track_type == 'fulltrack':
             return True
         return self.track_type in changed_params
-
-    def to_tuple(self) -> tuple:
-        return (self.user_id, self.steam_id, self.track_type)
-
 
     @classmethod
     def from_db_row(cls, row: tuple) -> 'Tracker':
