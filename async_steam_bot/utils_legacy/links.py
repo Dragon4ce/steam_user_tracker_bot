@@ -1,4 +1,4 @@
-from async_steam_bot.services.steam_api import SteamAPIService
+from async_steam_bot.services.steam_profile.steam_api import SteamAPIService
 class LinksService:
     def __init__(self, link):
         self._link = link

@@ -1,37 +1,11 @@
 from async_steam_bot.models.schemas import SteamUser
-from async_steam_bot.services.steam_user_processing import SteamUserProcessing
+from async_steam_bot.services.steam_profile.steam_user_processing import SteamUserProcessing
 from aiogram.types import (
-    InputRichBlockBlockQuotation,
-    InputRichBlockDivider,
-    InputRichBlockFooter,
-    InputRichBlockMathematicalExpression,
-    InputRichBlockParagraph,
-    InputRichBlockSectionHeading,
-    InputRichBlockDetails,
-    InputRichBlockTable,
-    InputRichMessage,
-    Message,
-    RichBlockTableCell,
-    RichTextAnchor,
-    RichTextAnchorLink,
     RichTextBold,
-    RichTextCode,
-    RichTextItalic,
-    RichTextSpoiler,
-    RichTextSuperscript,
-    InputRichBlockList,
-    InputRichBlockListItem,
-    InputRichBlockPullQuotation,
-    CallbackQuery,
-    CopyTextButton,
-    DisabledButton,
     InputRichBlockButtons,
-    InputRichBlockParagraph,
     InputRichBlockSectionHeading,
     InputRichMessage,
-    Message,
     RichMessageButton,
-    RichTextButton,
 )
 
 ONLINE_STATUS = {
@@ -44,8 +18,8 @@ ONLINE_STATUS = {
     }
 
 async def get_steam_profile_info(steam_user_info: SteamUser) -> str:
-    from async_steam_bot.utils.validators import Validator
-    from async_steam_bot.utils.time_utils import Time
+    from async_steam_bot.utilities.validators import Validator
+    from async_steam_bot.utilities.time_utils import Time
 
     username = await Validator.escape_markdown(steam_user_info.username)
 
