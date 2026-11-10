@@ -1,5 +1,5 @@
 import aiohttp
-from async_steam_bot.services.steam_links_parsing import SteamLink, LinkType
+from async_steam_bot.models.steam_links_parsing import SteamLink, LinkType
 from async_steam_bot.config import STEAM_API_KEY
 
 class SteamLinkResolver:
