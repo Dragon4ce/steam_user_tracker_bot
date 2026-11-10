@@ -1,40 +1,20 @@
 from async_steam_bot.models.database import Database
 from async_steam_bot.models.schemas import UserStats
-from async_steam_bot.services.steam_user_processing import SteamUserProcessing
+from async_steam_bot.services.steam_profile.steam_user_processing import SteamUserProcessing
 from aiogram.types import (
-    InputRichBlockBlockQuotation,
     InputRichBlockDivider,
-    InputRichBlockFooter,
-    InputRichBlockMathematicalExpression,
-    InputRichBlockParagraph,
-    InputRichBlockSectionHeading,
     InputRichBlockDetails,
-    InputRichBlockTable,
-    InputRichMessage,
-    Message,
-    RichBlockTableCell,
-    RichTextAnchor,
-    RichTextAnchorLink,
     RichTextBold,
     RichTextCode,
-    RichTextItalic,
-    RichTextSpoiler,
-    RichTextSuperscript,
-    InputRichBlockList,
-    InputRichBlockListItem,
     InputRichBlockPullQuotation,
-    CallbackQuery,
-    CopyTextButton,
-    DisabledButton,
     InputRichBlockButtons,
     InputRichBlockParagraph,
     InputRichBlockSectionHeading,
     InputRichMessage,
-    Message,
     RichMessageButton,
-    RichTextButton, InputRichBlockPhoto, InputMediaPhoto, RichTextUrl,
+    InputRichBlockPhoto, InputMediaPhoto, RichTextUrl,
 )
-from async_steam_bot.utils.time_utils import Time
+from async_steam_bot.utils_legacy.time_utils import Time
 from async_steam_bot.models.schemas import Tracker, TrackMethod
 
 def get_tracking_info(stats: UserStats, username: str) -> InputRichMessage:
